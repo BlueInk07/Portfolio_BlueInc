@@ -1,4 +1,5 @@
 import { lazy, useEffect, useRef, useState } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import DeferredSection from './components/DeferredSection'
 import './App.css'
 import logo from './assets/logo.png'
@@ -230,6 +231,7 @@ function App() {
         {(isVisible) => <AboutMe isActive={isVisible} />}
       </DeferredSection>
 
+      <Analytics />
     </div>
   )
 }
