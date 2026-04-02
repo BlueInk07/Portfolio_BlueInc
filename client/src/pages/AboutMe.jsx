@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import HexBackground from '../components/HexBackground';
+import creatorImg from '../assets/Creator.jpeg';
 import './Cubes.css';
 import './AboutMe.css';
 
@@ -183,12 +184,10 @@ const HelloTarget = ({ onTarget }) => {
 const Moodboard = () => (
   <div className="mb-single-image">
     <img
-      src="/moodboard.jpg"
-      alt="Moodboard"
-      onError={e => {
-        e.target.onerror = null;
-        e.target.src = 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=600&auto=format&fit=crop';
-      }}
+      src={creatorImg}
+      alt="Creator"
+      loading="lazy"
+      decoding="async"
     />
   </div>
 );
