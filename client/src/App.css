@@ -36,6 +36,22 @@ html, body {
   z-index: 1;
 }
 
+.section-skeleton {
+  width: 100%;
+  min-height: 100vh;
+  pointer-events: none;
+}
+
+.section-skeleton--projects {
+  background: transparent;
+}
+
+.section-skeleton--uiux,
+.section-skeleton--techstack,
+.section-skeleton--about {
+  background: transparent;
+}
+
 .hero-container {
   position: relative;
   height: 100vh;

@@ -1,12 +1,15 @@
 import { useEffect, useRef } from 'react';
+import { useAnimationBudget } from '../hooks/usePerformanceProfile';
 
-const NebulaBackground = () => {
+const NebulaBackground = ({ isActive = true }) => {
   const canvasRef = useRef(null);
   const animRef   = useRef(null);
+  const lastFrameRef = useRef(0);
+  const { shouldAnimate, targetFps } = useAnimationBudget(isActive);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !shouldAnimate) return undefined;
     const ctx = canvas.getContext('2d');
 
     const off    = document.createElement('canvas');
@@ -41,7 +44,15 @@ const NebulaBackground = () => {
 
     let t = 0;
 
-    const draw = () => {
+    const frameInterval = 1000 / targetFps;
+
+    const draw = (timestamp = 0) => {
+      if (timestamp - lastFrameRef.current < frameInterval) {
+        animRef.current = requestAnimationFrame(draw);
+        return;
+      }
+      lastFrameRef.current = timestamp;
+
       const W  = canvas.width;
       const H  = canvas.height;
       const OW = off.width;
@@ -143,13 +154,13 @@ const NebulaBackground = () => {
       animRef.current = requestAnimationFrame(draw);
     };
 
-    draw();
+    animRef.current = requestAnimationFrame(draw);
 
     return () => {
       cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', resize);
     };
-  }, []);
+  }, [shouldAnimate, targetFps]);
 
   return (
     <canvas

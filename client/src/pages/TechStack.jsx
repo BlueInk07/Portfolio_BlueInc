@@ -1,14 +1,28 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./TechStack.css";
+import { useAnimationBudget } from "../hooks/usePerformanceProfile";
+import gitIcon from "../assets/tech-icons/git-original.svg";
+import githubIcon from "../assets/tech-icons/github-original.svg";
+import figmaIcon from "../assets/tech-icons/figma-original.svg";
+import canvaIcon from "../assets/tech-icons/canva-original.svg";
+import pythonIcon from "../assets/tech-icons/python-original.svg";
+import cppIcon from "../assets/tech-icons/cplusplus-original.svg";
+import mysqlIcon from "../assets/tech-icons/mysql-original.svg";
+import htmlIcon from "../assets/tech-icons/html5-original.svg";
+import cssIcon from "../assets/tech-icons/css3-original.svg";
+import jsIcon from "../assets/tech-icons/javascript-original.svg";
+import reactIcon from "../assets/tech-icons/react-original.svg";
+import mongoIcon from "../assets/tech-icons/mongodb-original.svg";
+import expressIcon from "../assets/tech-icons/express-original.svg";
 
 const TOOLS_NODE = {
   id: "tools", pos: "center", label: "TOOLS",
   color: "#0d0d0d", glow: "rgba(20,168,226,0.93)",
   techs: [
-    { name: "Git",    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg" },
-    { name: "GitHub", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" },
-    { name: "Figma",  icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/figma/figma-original.svg" },
-    { name: "Canva",  icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/canva/canva-original.svg" },
+    { name: "Git",    icon: gitIcon },
+    { name: "GitHub", icon: githubIcon },
+    { name: "Figma",  icon: figmaIcon },
+    { name: "Canva",  icon: canvaIcon },
   ],
 };
 const SATELLITE_NODES = [
@@ -16,19 +30,19 @@ const SATELLITE_NODES = [
     id: "language", pos: "top", label: "LANGUAGE",
     color: "#0e0e0e", glow: "rgba(20,168,226,0.93)",
     techs: [
-      { name: "Python", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" },
-      { name: "C++",    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg" },
-      { name: "SQL",    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg" },
+      { name: "Python", icon: pythonIcon },
+      { name: "C++",    icon: cppIcon },
+      { name: "SQL",    icon: mysqlIcon },
     ],
   },
   {
     id: "frontend", pos: "left", label: "FRONTEND",
     color: "#0c0c0c", glow: "rgba(20,168,226,0.93)",
     techs: [
-      { name: "HTML5",      icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg" },
-      { name: "CSS3",       icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg" },
-      { name: "JavaScript", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg" },
-      { name: "React",      icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" },
+      { name: "HTML5",      icon: htmlIcon },
+      { name: "CSS3",       icon: cssIcon },
+      { name: "JavaScript", icon: jsIcon },
+      { name: "React",      icon: reactIcon },
     ],
   },
   {
@@ -36,7 +50,7 @@ const SATELLITE_NODES = [
     color: "#111111", glow: "rgba(20,168,226,0.93)",
     labelPosition: "bottom-right", // <-- bottom-right label
     techs: [
-      { name: "MongoDB", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mongodb/mongodb-original.svg" },
+      { name: "MongoDB", icon: mongoIcon },
     ],
   },
   {
@@ -44,8 +58,8 @@ const SATELLITE_NODES = [
     color: "#060113", glow: "rgba(20,168,226,0.93)",
     labelPosition: "bottom-right", // <-- bottom-right label
     techs: [
-      { name: "Python",  icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" },
-      { name: "Express", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg" },
+      { name: "Python",  icon: pythonIcon },
+      { name: "Express", icon: expressIcon },
     ],
   },
 ];
@@ -66,12 +80,15 @@ function seedRandom(x, y) {
   return n - Math.floor(n);
 }
 
-function DotCanvas({ W, H }) {
+function DotCanvas({ W, H, isActive }) {
   const canvasRef = useRef(null);
   const mouseRef  = useRef({ x: -9999, y: -9999 });
   const rafRef    = useRef(null);
   const dotsRef   = useRef([]);
   const startRef  = useRef(null);
+  const lastFrameRef = useRef(0);
+  const { shouldAnimate, targetFps, isLowPowerDevice } = useAnimationBudget(isActive);
+  const renderScale = isLowPowerDevice ? 0.5 : 0.68;
 
   useEffect(() => {
     const cols = Math.ceil(W / DOT_GAP) + 2;
@@ -97,8 +114,11 @@ function DotCanvas({ W, H }) {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !shouldAnimate) return undefined;
     const ctx = canvas.getContext("2d");
+    canvas.width = Math.max(1, Math.floor(W * renderScale));
+    canvas.height = Math.max(1, Math.floor(H * renderScale));
+    ctx.setTransform(renderScale, 0, 0, renderScale, 0, 0);
 
     // Autonomous wander orbs — slower, smoother, larger influence radii
     const orbs = [
@@ -165,7 +185,15 @@ function DotCanvas({ W, H }) {
       }
     };
 
+    const frameInterval = 1000 / targetFps;
+
     const draw = (ts) => {
+      if (ts - lastFrameRef.current < frameInterval) {
+        rafRef.current = requestAnimationFrame(draw);
+        return;
+      }
+      lastFrameRef.current = ts;
+
       if (!startRef.current) startRef.current = ts;
       const elapsed = ts - startRef.current;
 
@@ -232,7 +260,7 @@ function DotCanvas({ W, H }) {
 
     rafRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [W, H]);
+  }, [W, H, shouldAnimate, targetFps, renderScale]);
 
   useEffect(() => {
     const move  = e => {
@@ -292,7 +320,7 @@ function CardPopup({ cat, onClose }) {
           {cat.techs.map((tech) => (
             <div key={tech.name} className="popup-tech-item">
               <div className="popup-tech-icon">
-                <img src={tech.icon} alt={tech.name} />
+                <img src={tech.icon} alt={tech.name} loading="lazy" decoding="async" />
               </div>
               <span className="popup-tech-name">{tech.name}</span>
             </div>
@@ -304,7 +332,7 @@ function CardPopup({ cat, onClose }) {
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
-export default function TechStack() {
+export default function TechStack({ isActive = true }) {
   const ref = useRef(null);
   const [size, setSize] = useState({ W: 900, H: 700 });
   const [isOpen, setIsOpen] = useState(false);
@@ -327,7 +355,7 @@ export default function TechStack() {
 
   return (
     <div className="ts-wrapper" ref={ref}>
-      <DotCanvas W={size.W} H={size.H} />
+      <DotCanvas W={size.W} H={size.H} isActive={isActive} />
 
       {/* Background ambient blobs */}
       <div className="ts-blob" style={{ width: 500, height: 500, top: -160, left: -160, background: "rgba(0, 102, 255, 0.08)" }} />
@@ -374,7 +402,7 @@ export default function TechStack() {
                   {cat.techs.map((tech) => (
                     <div key={tech.name} className="env-tech-item">
                       <div className="env-tech-icon">
-                        <img src={tech.icon} alt={tech.name} />
+                        <img src={tech.icon} alt={tech.name} loading="lazy" decoding="async" />
                       </div>
                       <span className="env-tech-name">{tech.name}</span>
                     </div>

@@ -1,5 +1,7 @@
-import MagicBento from "../components/MagicBento";
+import { Suspense, lazy } from "react";
 import "./Projects.css";
+
+const MagicBento = lazy(() => import("../components/MagicBento"));
 function Projects() {
   return (
     <div 
@@ -24,19 +26,21 @@ function Projects() {
         PROJECTS
       </h1>
       
-      <MagicBento
-        textAutoHide={true}
-        enableStars
-        enableSpotlight
-        enableBorderGlow={true}
-        enableTilt={false}
-        enableMagnetism={false}
-        clickEffect
-        spotlightRadius={400}
-        particleCount={12}
-        glowColor="132, 0, 255"
-        disableAnimations={false}
-      />
+      <Suspense fallback={null}>
+        <MagicBento
+          textAutoHide={true}
+          enableStars
+          enableSpotlight
+          enableBorderGlow={true}
+          enableTilt={false}
+          enableMagnetism={false}
+          clickEffect
+          spotlightRadius={400}
+          particleCount={12}
+          glowColor="132, 0, 255"
+          disableAnimations={false}
+        />
+      </Suspense>
     </div>
   );
 }

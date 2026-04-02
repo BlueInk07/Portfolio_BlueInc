@@ -1,11 +1,14 @@
 import { useEffect, useRef } from 'react';
+import { useAnimationBudget } from '../hooks/usePerformanceProfile';
 
-export default function HexBackground() {
+export default function HexBackground({ isActive = true }) {
   const canvasRef = useRef(null);
+  const lastFrameRef = useRef(0);
+  const { shouldAnimate, targetFps } = useAnimationBudget(isActive);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !shouldAnimate) return undefined;
     const ctx = canvas.getContext('2d');
     let animId;
     let time = 0;
@@ -46,7 +49,15 @@ export default function HexBackground() {
     resize();
     window.addEventListener('resize', resize);
 
-    function draw() {
+    const frameInterval = 1000 / targetFps;
+
+    function draw(timestamp = 0) {
+      if (timestamp - lastFrameRef.current < frameInterval) {
+        animId = requestAnimationFrame(draw);
+        return;
+      }
+      lastFrameRef.current = timestamp;
+
       const W = canvas.width;
       const H = canvas.height;
 
@@ -179,13 +190,13 @@ export default function HexBackground() {
       animId = requestAnimationFrame(draw);
     }
 
-    draw();
+    animId = requestAnimationFrame(draw);
 
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener('resize', resize);
     };
-  }, []);
+  }, [shouldAnimate, targetFps]);
 
   return (
     <canvas

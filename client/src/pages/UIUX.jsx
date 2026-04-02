@@ -20,12 +20,54 @@ const cards = [
 const UIUX = () => {
   const [activeId,   setActiveId]   = useState(cards[2].id);
   const [previewSrc, setPreviewSrc] = useState(null); // null = modal closed
+  const [loadedImages, setLoadedImages] = useState(() => new Set());
 
   /* close modal on Escape key */
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") setPreviewSrc(null); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const preload = async () => {
+      for (const card of cards) {
+        const img = new Image();
+        img.src = card.src;
+        try {
+          if (img.decode) {
+            await img.decode();
+          }
+        } catch {
+          // Best-effort preload; rendering still works even if decode rejects.
+        }
+
+        if (!cancelled) {
+          setLoadedImages((current) => {
+            if (current.has(card.src)) return current;
+            const next = new Set(current);
+            next.add(card.src);
+            return next;
+          });
+        }
+      }
+    };
+
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(preload, { timeout: 1200 });
+      return () => {
+        cancelled = true;
+        window.cancelIdleCallback(idleId);
+      };
+    }
+
+    const timeoutId = window.setTimeout(preload, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
   }, []);
 
   return (
@@ -66,7 +108,13 @@ const UIUX = () => {
               className={`uiux-card-item${isActive ? " active" : ""}`}
               onClick={() => setActiveId(card.id)}
             >
-              <img src={card.src} alt={card.title} draggable={false} />
+              <img
+                src={card.src}
+                alt={card.title}
+                draggable={false}
+                loading={isActive ? "eager" : "lazy"}
+                decoding="async"
+              />
               <div className="uiux-card-scrim" />
               <span className="uiux-card-vtitle">{card.title}</span>
 
@@ -104,7 +152,12 @@ const UIUX = () => {
             className="uiux-modal-box"
             onClick={(e) => e.stopPropagation()}
           >
-            <img src={previewSrc} alt="poster preview" />
+            <img
+              src={previewSrc}
+              alt="poster preview"
+              loading="eager"
+              decoding={loadedImages.has(previewSrc) ? "sync" : "async"}
+            />
             <button
               className="uiux-modal-close"
               onClick={() => setPreviewSrc(null)}

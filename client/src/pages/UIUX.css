@@ -242,6 +242,7 @@
     flex var(--trans),
     border-radius var(--trans),
     box-shadow var(--trans);
+  will-change: flex, transform, opacity;
   box-shadow:
     0 6px 24px rgba(0,0,0,0.7),
     0 0 0 1px rgba(58,123,255,0.18);
@@ -404,6 +405,7 @@
   z-index: 1000;
   background: rgba(0, 0, 0, 0.82);
   backdrop-filter: blur(8px);
+  will-change: opacity;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -425,6 +427,8 @@
     0 30px 80px rgba(0, 0, 0, 0.9),
     0 0 0 1px rgba(80, 140, 255, 0.3),
     0 0 40px rgba(40, 80, 255, 0.2);
+  will-change: transform, opacity;
+  contain: layout paint;
   animation: modalSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

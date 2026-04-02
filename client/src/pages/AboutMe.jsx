@@ -10,7 +10,7 @@ const Cubes = ({
   easing = 'power3.out', duration = { enter: 0.3, leave: 0.6 },
   cellGap, borderStyle = '1px solid #fff', faceColor = '#060010',
   autoAnimate = true, rippleOnClick = true,
-  rippleColor = '#fff', rippleSpeed = 2
+  rippleColor = '#fff', rippleSpeed = 2, isActive = true
 }) => {
   const sceneRef = useRef(null);
   const rafRef = useRef(null);
@@ -83,7 +83,7 @@ const Cubes = ({
   }, [rippleOnClick, cols, rows, faceColor, rippleColor, rippleSpeed]);
 
   useEffect(() => {
-    if (!autoAnimate || !sceneRef.current) return;
+    if (!autoAnimate || !isActive || !sceneRef.current) return;
     simPosRef.current = { x: Math.random() * cols, y: Math.random() * rows };
     simTargetRef.current = { x: Math.random() * cols, y: Math.random() * rows };
     const loop = () => {
@@ -99,7 +99,7 @@ const Cubes = ({
     };
     simRAFRef.current = requestAnimationFrame(loop);
     return () => { if (simRAFRef.current != null) cancelAnimationFrame(simRAFRef.current); };
-  }, [autoAnimate, cols, rows, tiltAt]);
+  }, [autoAnimate, cols, rows, tiltAt, isActive]);
 
   useEffect(() => {
     const el = sceneRef.current;
@@ -255,13 +255,13 @@ const SocialTile = () => (
     <div className="tile-expanded-content">
       <span className="tile-title" style={{ marginBottom: '6px' }}>SOCIAL HANDLES</span>
       <div className="social-links-col">
-        <a href="#/" className="social-link">
+        <a href="https://www.linkedin.com/in/simran-chouhan17" className="social-link" target="_blank" rel="noreferrer">
           <IconLinkedIn /> LinkedIn
         </a>
-        <a href="#/" className="social-link">
+        <a href="https://github.com/BlueInk07" className="social-link" target="_blank" rel="noreferrer">
           <IconGitHub /> GitHub
         </a>
-        <a href="#/" className="social-link">
+        <a href="https://www.figma.com/@simran_17" className="social-link" target="_blank" rel="noreferrer">
           <IconFigma /> Figma
         </a>
       </div>
@@ -284,13 +284,13 @@ const LanguageTile = () => (
 );
 
 /* ─── Main AboutMe Page ──────────────────────────────────────── */
-export default function AboutMe() {
+export default function AboutMe({ isActive = true }) {
   const [targeted, setTargeted] = useState(false);
 
   return (
     <div className="about-page">
       {/* Animated hexagonal background — replaces static stars-bg */}
-      <HexBackground />
+      <HexBackground isActive={isActive} />
 
       <h2 className="page-title">ABOUT<br/><span className="dot-me">.ME.</span></h2>
 
@@ -307,7 +307,7 @@ export default function AboutMe() {
               <Cubes rows={5} cols={2} radius={2}
                 borderStyle="1px solid rgba(255,255,255,0.5)"
                 faceColor="#020818" rippleColor="#ffffff"
-                autoAnimate rippleOnClick />
+                autoAnimate rippleOnClick isActive={isActive} />
             </div>
           </div>
 
@@ -345,7 +345,7 @@ export default function AboutMe() {
               <Cubes rows={5} cols={6} radius={2}
                 borderStyle="1px solid rgba(255,255,255,0.5)"
                 faceColor="#020818" rippleColor="#ffffff"
-                autoAnimate rippleOnClick />
+                autoAnimate rippleOnClick isActive={isActive} />
             </div>
           </div>
         </div>
@@ -355,7 +355,7 @@ export default function AboutMe() {
           <Cubes rows={6} cols={6} radius={2}
             borderStyle="1px solid rgba(255,255,255,0.5)"
             faceColor="#020818" rippleColor="#ffffff"
-            autoAnimate rippleOnClick />
+            autoAnimate rippleOnClick isActive={isActive} />
         </div>
       </div>
     </div>

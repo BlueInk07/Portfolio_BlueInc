@@ -1,18 +1,21 @@
-import { useState, useEffect, useRef } from 'react'
-import Silk from './components/Silk'
-import MagicBento from './components/MagicBento'
-import UIUXInline from './pages/UIUX'
-import TechStack from './pages/TechStack'
-import NebulaBackground from './components/NebulaBackground.jsx'
-import NeuralCircuit from './components/NeuralCircuit'
+import { lazy, useEffect, useRef, useState } from 'react'
+import DeferredSection from './components/DeferredSection'
 import './App.css'
 import logo from './assets/logo.png'
-import hoverImg from './assets/hover.jpg'
-import AboutMe from './pages/AboutMe'
+
+const Silk = lazy(() => import('./components/Silk'))
+const MagicBento = lazy(() => import('./components/MagicBento'))
+const UIUXInline = lazy(() => import('./pages/UIUX'))
+const TechStack = lazy(() => import('./pages/TechStack'))
+const NebulaBackground = lazy(() => import('./components/NebulaBackground.jsx'))
+const NeuralCircuit = lazy(() => import('./components/NeuralCircuit'))
+const AboutMe = lazy(() => import('./pages/AboutMe'))
 
 function App() {
   const [moreOpen, setMoreOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [hoverImg, setHoverImg] = useState('')
+  const [showHeroBackground, setShowHeroBackground] = useState(false)
   const dropdownRef = useRef(null)
   const hamburgerRef = useRef(null)
 
@@ -33,6 +36,39 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => {
+      setShowHeroBackground(true)
+    })
+
+    return () => window.cancelAnimationFrame(frameId)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    const warmHoverAsset = () => {
+      import('./assets/hover.jpg').then((module) => {
+        if (!cancelled) {
+          setHoverImg(module.default)
+        }
+      })
+    }
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(warmHoverAsset, { timeout: 1200 })
+      return () => {
+        cancelled = true
+        window.cancelIdleCallback(idleId)
+      }
+    }
+
+    const timeoutId = window.setTimeout(warmHoverAsset, 300)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
+  }, [])
+
   const scrollTo = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
     setMoreOpen(false)
@@ -44,7 +80,7 @@ function App() {
 
       <section className="hero-container">
         <div className="background">
-          <Silk color="#102A5E" />
+          {showHeroBackground ? <Silk color="#102A5E" /> : null}
         </div>
 
         <section className="hero-section">
@@ -114,7 +150,7 @@ function App() {
             <div className="explore-wrapper">
               <button
                 className="explore-btn"
-                style={{ '--hover-image': `url(${hoverImg})` }}
+                style={hoverImg ? { '--hover-image': `url(${hoverImg})` } : undefined}
                 onClick={() => scrollTo('projects-section')}
               >
                 Explore More
@@ -125,8 +161,16 @@ function App() {
         </section>
       </section>
 
-      <section id="projects-section" className="projects-wrapper">
-        <NebulaBackground />
+      <DeferredSection
+        id="projects-section"
+        className="projects-wrapper"
+        minHeight="100vh"
+        rootMargin="500px 0px"
+        fallback={<div className="section-skeleton section-skeleton--projects" />}
+      >
+        {(isVisible) => (
+          <>
+        <NebulaBackground isActive={isVisible} />
         <h1 style={{
           fontFamily: '"Times New Roman", serif',
           fontSize: 'clamp(3rem, 6vw, 5rem)',
@@ -144,24 +188,47 @@ function App() {
           backgroundClip: 'text',
         }}>PROJECTS</h1>
         <MagicBento
+          isActive={isVisible}
           textAutoHide enableStars enableSpotlight enableBorderGlow
           enableTilt={false} enableMagnetism={false} clickEffect
           spotlightRadius={400} particleCount={12} glowColor="20, 76, 196"
         />
-      </section>
+          </>
+        )}
+      </DeferredSection>
 
-      <section id="uiux-section">
-        <UIUXInline />
-      </section>
+      <DeferredSection
+        id="uiux-section"
+        minHeight="100vh"
+        rootMargin="400px 0px"
+        fallback={<div className="section-skeleton section-skeleton--uiux" />}
+      >
+        {() => <UIUXInline />}
+      </DeferredSection>
 
-      <section id="techstack-section" style={{ position: 'relative' }}>
-        <NeuralCircuit />
-        <TechStack />
-      </section>
+      <DeferredSection
+        id="techstack-section"
+        style={{ position: 'relative' }}
+        minHeight="100vh"
+        rootMargin="400px 0px"
+        fallback={<div className="section-skeleton section-skeleton--techstack" />}
+      >
+        {(isVisible) => (
+          <>
+            <NeuralCircuit isActive={isVisible} />
+            <TechStack isActive={isVisible} />
+          </>
+        )}
+      </DeferredSection>
 
-      <section id="aboutme-section">
-        <AboutMe />
-      </section>
+      <DeferredSection
+        id="aboutme-section"
+        minHeight="100vh"
+        rootMargin="300px 0px"
+        fallback={<div className="section-skeleton section-skeleton--about" />}
+      >
+        {(isVisible) => <AboutMe isActive={isVisible} />}
+      </DeferredSection>
 
     </div>
   )

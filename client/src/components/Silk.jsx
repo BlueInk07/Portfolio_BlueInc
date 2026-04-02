@@ -2,6 +2,7 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { forwardRef, useRef, useMemo, useLayoutEffect } from 'react';
 import { Color } from 'three';
+import { usePerformanceProfile } from '../hooks/usePerformanceProfile';
 
 const hexToNormalizedRGB = hex => {
   hex = hex.replace('#', '');
@@ -69,7 +70,7 @@ void main() {
 }
 `;
 
-const SilkPlane = forwardRef(function SilkPlane({ uniforms }, ref) {
+const SilkPlane = forwardRef(function SilkPlane({ uniforms, shouldAnimate, speedMultiplier }, ref) {
   const { viewport } = useThree();
 
   useLayoutEffect(() => {
@@ -79,8 +80,8 @@ const SilkPlane = forwardRef(function SilkPlane({ uniforms }, ref) {
   }, [ref, viewport]);
 
   useFrame((_, delta) => {
-    if (ref.current) {
-      ref.current.material.uniforms.uTime.value += 0.1 * delta;
+    if (ref.current && shouldAnimate) {
+      ref.current.material.uniforms.uTime.value += 0.1 * delta * speedMultiplier;
     }
   });
 
@@ -101,9 +102,13 @@ const Silk = ({
   scale = 1,
   color="#0A1F44",
   noiseIntensity = 1.5,
-  rotation = 0
+  rotation = 0,
+  isActive = true,
 }) => {
   const meshRef = useRef();
+  const { isDocumentVisible, isLowPowerDevice, prefersReducedMotion } = usePerformanceProfile();
+  const shouldAnimate = isActive && isDocumentVisible;
+  const speedMultiplier = prefersReducedMotion ? 0.35 : isLowPowerDevice ? 0.7 : 1;
 
   const uniforms = useMemo(
     () => ({
@@ -119,7 +124,7 @@ const Silk = ({
 return (
   <Canvas
     frameloop="always"
-    dpr={1}   // 🔥 force single DPR
+    dpr={isLowPowerDevice ? [0.75, 1] : 1}
     style={{
       position: "absolute",
       inset: 0,
@@ -129,9 +134,14 @@ return (
       zIndex: -1,             /* <-- Forces it behind your content */
     pointerEvents: "none"
     }}
-    gl={{ preserveDrawingBuffer: false }}
+    gl={{ preserveDrawingBuffer: false, powerPreference: isLowPowerDevice ? 'default' : 'high-performance' }}
   >
-    <SilkPlane ref={meshRef} uniforms={uniforms} />
+    <SilkPlane
+      ref={meshRef}
+      uniforms={uniforms}
+      shouldAnimate={shouldAnimate}
+      speedMultiplier={speedMultiplier}
+    />
   </Canvas>
 );
 };
