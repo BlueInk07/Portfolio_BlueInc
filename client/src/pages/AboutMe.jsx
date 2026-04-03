@@ -216,7 +216,7 @@ const Timeline = () => (
       <div className="tl-line-v tl-line-v-long" />
       <div className="tl-bottom-circle">↓</div>
     </div>
-    <a href="/src/assets/resume.pdf" download="Simran_Resume.pdf" className="resume-btn">
+    <a href="/resume.pdf" download="Simran_Resume.pdf" className="resume-btn">
       Download Resume
     </a>
   </div>

@@ -167,8 +167,6 @@ const UIUX = () => {
           </div>
         </div>
       )}
-
-      <span className="uiux-desktop-label">Desktop - 4</span>
     </div>
   );
 };
