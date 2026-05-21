@@ -19,7 +19,7 @@ const cardData = [
     description: 'AI-powered chatbot with tone control and personalized responses trained on user chat history.',
     tech: 'HTML • CSS • JavaScript • Python',
     img: twintalkImg,
-    link: 'https://github.com/yourusername/twintalk'
+    link: 'https://twin-talk-rho.vercel.app/'
   },
   {
     title: 'BLOOMEATS',
