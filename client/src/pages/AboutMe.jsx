@@ -1,9 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import HexBackground from '../components/HexBackground';
 import creatorImg from '../assets/Creator.jpeg';
 import './Cubes.css';
 import './AboutMe.css';
+
+gsap.registerPlugin(ScrollTrigger);
 
 /* ─── Cubes Component ──────────────────────────────────────────── */
 const Cubes = ({
@@ -20,6 +23,7 @@ const Cubes = ({
   const simPosRef = useRef({ x: 0, y: 0 });
   const simTargetRef = useRef({ x: 0, y: 0 });
   const simRAFRef = useRef(null);
+  const lastSimFrameRef = useRef(0);
 
   const colGap = typeof cellGap === 'number' ? `${cellGap}px` : cellGap?.col !== undefined ? `${cellGap.col}px` : '5%';
   const rowGap = typeof cellGap === 'number' ? `${cellGap}px` : cellGap?.row !== undefined ? `${cellGap.row}px` : '5%';
@@ -87,8 +91,9 @@ const Cubes = ({
     if (!autoAnimate || !isActive || !sceneRef.current) return;
     simPosRef.current = { x: Math.random() * cols, y: Math.random() * rows };
     simTargetRef.current = { x: Math.random() * cols, y: Math.random() * rows };
-    const loop = () => {
-      if (!userActiveRef.current) {
+    const loop = (ts) => {
+      if (!userActiveRef.current && ts - lastSimFrameRef.current > 80) {
+        lastSimFrameRef.current = ts;
         const pos = simPosRef.current, tgt = simTargetRef.current;
         pos.x += (tgt.x - pos.x) * 0.02;
         pos.y += (tgt.y - pos.y) * 0.02;
@@ -284,10 +289,75 @@ const LanguageTile = () => (
 
 /* ─── Main AboutMe Page ──────────────────────────────────────── */
 export default function AboutMe({ isActive = true }) {
+  const pageRef = useRef(null);
   const [targeted, setTargeted] = useState(false);
 
+  useEffect(() => {
+    if (!pageRef.current || !isActive) return undefined;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return undefined;
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        '.page-title',
+        { autoAlpha: 0, y: 44 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.85,
+          ease: 'power3.out',
+          clearProps: 'transform,opacity,visibility',
+          scrollTrigger: {
+            trigger: pageRef.current,
+            start: 'top 78%',
+            once: true,
+          },
+        }
+      );
+
+      gsap.fromTo(
+        ['.vert-tiles', '.hello-section', '.moodboard-section'],
+        { autoAlpha: 0, y: 46 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.85,
+          ease: 'power3.out',
+          stagger: 0.12,
+          clearProps: 'transform,opacity,visibility',
+          scrollTrigger: {
+            trigger: '.top-section',
+            start: 'top 82%',
+            once: true,
+          },
+        }
+      );
+
+      gsap.fromTo(
+        ['.status-timeline', '.lang-social-wrapper', '.cubes-bottom'],
+        { autoAlpha: 0, y: 52 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.85,
+          ease: 'power3.out',
+          stagger: 0.12,
+          clearProps: 'transform,opacity,visibility',
+          scrollTrigger: {
+            trigger: '.bottom-section',
+            start: 'top 86%',
+            once: true,
+          },
+        }
+      );
+    }, pageRef);
+
+    return () => ctx.revert();
+  }, [isActive]);
+
   return (
-    <div className="about-page">
+    <div className="about-page" ref={pageRef}>
       {/* Animated hexagonal background — replaces static stars-bg */}
       <HexBackground isActive={isActive} />
 

@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./TechStack.css";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useAnimationBudget } from "../hooks/usePerformanceProfile";
 import gitIcon from "../assets/tech-icons/git-original.svg";
 import githubIcon from "../assets/tech-icons/github-original.svg";
@@ -14,6 +16,8 @@ import jsIcon from "../assets/tech-icons/javascript-original.svg";
 import reactIcon from "../assets/tech-icons/react-original.svg";
 import mongoIcon from "../assets/tech-icons/mongodb-original.svg";
 import expressIcon from "../assets/tech-icons/express-original.svg";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const TOOLS_NODE = {
   id: "tools", pos: "center", label: "TOOLS",
@@ -345,6 +349,70 @@ export default function TechStack({ isActive = true }) {
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!ref.current || !isActive) return undefined;
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) return undefined;
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        ".ts-header-box",
+        { autoAlpha: 0, y: 42 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.8,
+          ease: "power3.out",
+          clearProps: "transform,opacity,visibility",
+          scrollTrigger: {
+            trigger: ref.current,
+            start: "top 78%",
+            once: true,
+          },
+        }
+      );
+
+      gsap.fromTo(
+        ".env-wrapper",
+        { autoAlpha: 0, y: 60, scale: 0.96 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.95,
+          ease: "power3.out",
+          clearProps: "transform,opacity,visibility",
+          scrollTrigger: {
+            trigger: ".env-scene",
+            start: "top 84%",
+            once: true,
+          },
+        }
+      );
+
+      gsap.fromTo(
+        ".env-card",
+        { autoAlpha: 0, y: 34 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.65,
+          ease: "power3.out",
+          stagger: 0.07,
+          clearProps: "transform,opacity,visibility",
+          scrollTrigger: {
+            trigger: ".env-scene",
+            start: "top 78%",
+            once: true,
+          },
+        }
+      );
+    }, ref);
+
+    return () => ctx.revert();
+  }, [isActive]);
 
   const allCategories = [TOOLS_NODE, ...SATELLITE_NODES];
 

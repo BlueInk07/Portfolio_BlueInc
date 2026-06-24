@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./UIUX.css";
 
 import hhdImg     from "../assets/hhd.jpg";
@@ -7,6 +9,8 @@ import laptopImg  from "../assets/Laptop.jpg";
 import monsterImg from "../assets/MONSTER.jpg";
 import tintImg    from "../assets/Tint.png";
 import pfpImg from "../assets/pfp.png";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const cards = [
   { id: 1, title: "Bass Boosted", desc: "Audio visual identity design", src: hhdImg },
@@ -18,6 +22,7 @@ const cards = [
 ];
 
 const UIUX = () => {
+  const sectionRef = useRef(null);
   const [activeId,   setActiveId]   = useState(cards[2].id);
   const [previewSrc, setPreviewSrc] = useState(null); // null = modal closed
   const [loadedImages, setLoadedImages] = useState(() => new Set());
@@ -70,8 +75,55 @@ const UIUX = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!sectionRef.current) return undefined;
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) return undefined;
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        [".uiux-title", ".uiux-middle-row", ".uiux-subtitle"],
+        { autoAlpha: 0, y: 34 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.8,
+          ease: "power3.out",
+          stagger: 0.1,
+          clearProps: "transform,opacity,visibility",
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top 78%",
+            once: true,
+          },
+        }
+      );
+
+      gsap.fromTo(
+        ".uiux-card-item",
+        { autoAlpha: 0, y: 58 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.85,
+          ease: "power3.out",
+          stagger: 0.08,
+          clearProps: "transform,opacity,visibility",
+          scrollTrigger: {
+            trigger: ".uiux-gallery",
+            start: "top 84%",
+            once: true,
+          },
+        }
+      );
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <div className="uiux-section">
+    <div className="uiux-section" ref={sectionRef}>
 
       {/* ── BACK WALL ── */}
       <div className="uiux-wall" />

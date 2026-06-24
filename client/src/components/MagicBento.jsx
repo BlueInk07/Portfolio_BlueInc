@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import './MagicBento.css';
 import twintalkImg from '../assets/twintalk.png';
 import bloomeatsImg from '../assets/bloomeats.png';
 import darkbytezImg from '../assets/darkbytez.png';
 import syncinImg from '../assets/syncin.png';
 import { useAnimationBudget } from '../hooks/usePerformanceProfile';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const DEFAULT_PARTICLE_COUNT = 12;
 const DEFAULT_SPOTLIGHT_RADIUS = 300;
@@ -310,6 +313,7 @@ const GlobalSpotlight = ({
 }) => {
   const spotlightRef = useRef(null);
   const frameRef = useRef(null);
+  const boundsFrameRef = useRef(null);
   const cardsCacheRef = useRef([]);
 
   useEffect(() => {
@@ -347,6 +351,14 @@ const GlobalSpotlight = ({
         node,
         rect: node.getBoundingClientRect(),
       }));
+    };
+
+    const scheduleCardBoundsRefresh = () => {
+      if (boundsFrameRef.current) return;
+      boundsFrameRef.current = requestAnimationFrame(() => {
+        boundsFrameRef.current = null;
+        refreshCardBounds();
+      });
     };
 
     const renderSpotlight = (clientX, clientY) => {
@@ -419,16 +431,19 @@ const GlobalSpotlight = ({
     refreshCardBounds();
     gridNode.addEventListener('pointermove', handlePointerMove);
     gridNode.addEventListener('pointerleave', handlePointerLeave);
-    window.addEventListener('resize', refreshCardBounds);
-    window.addEventListener('scroll', refreshCardBounds, { passive: true });
+    window.addEventListener('resize', scheduleCardBoundsRefresh);
+    window.addEventListener('scroll', scheduleCardBoundsRefresh, { passive: true });
 
     return () => {
       gridNode.removeEventListener('pointermove', handlePointerMove);
       gridNode.removeEventListener('pointerleave', handlePointerLeave);
-      window.removeEventListener('resize', refreshCardBounds);
-      window.removeEventListener('scroll', refreshCardBounds);
+      window.removeEventListener('resize', scheduleCardBoundsRefresh);
+      window.removeEventListener('scroll', scheduleCardBoundsRefresh);
       if (frameRef.current) {
         cancelAnimationFrame(frameRef.current);
+      }
+      if (boundsFrameRef.current) {
+        cancelAnimationFrame(boundsFrameRef.current);
       }
       spotlightRef.current?.parentNode?.removeChild(spotlightRef.current);
     };
@@ -478,6 +493,39 @@ const MagicBento = ({
   const { shouldAnimate } = useAnimationBudget(isActive);
   const shouldDisableAnimations = disableAnimations || isMobile || !shouldAnimate;
   const shouldEnableInteractivity = !shouldDisableAnimations;
+
+  useEffect(() => {
+    if (!gridRef.current || shouldDisableAnimations) return undefined;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return undefined;
+
+    const cards = gsap.utils.toArray(gridRef.current.querySelectorAll('.magic-bento-card'));
+    const triggers = cards.map((card, index) => {
+      const direction = index % 2 === 0 ? -1 : 1;
+
+      gsap.set(card, { autoAlpha: 0, x: direction * 90, willChange: 'transform, opacity' });
+
+      const tween = gsap.to(card, {
+        autoAlpha: 1,
+        x: 0,
+        duration: 0.85,
+        ease: 'power3.out',
+        clearProps: 'transform,opacity,visibility,willChange',
+        scrollTrigger: {
+          trigger: card,
+          start: 'top 88%',
+          once: true,
+        },
+      });
+
+      return tween.scrollTrigger;
+    });
+
+    return () => {
+      triggers.forEach((trigger) => trigger?.kill());
+    };
+  }, [shouldDisableAnimations]);
 
   return (
     <>
